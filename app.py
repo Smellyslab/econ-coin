@@ -158,7 +158,7 @@ def new_transaction(frm, key, to, amount):
         wallet_bals = json.load(f)
 
     tax = percent(f"{amount}*10%")
-    if amount == 80000000:
+    if amount >= 80000000:
         return "Transactions of this size are not allowed, max size is 70000000 ECN with a network fee of 20% due to the larger size."
     if amount >= 70000000:
         tax = percent(f"{amount}*20%")
