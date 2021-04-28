@@ -50,7 +50,7 @@ class BlockChain(object):
             "sender":sender,
             "recient":recipient,
             "amount":amount,
-        })        
+        })
         return int(self.last_block['index'])+1
 
     def proof_of_work(self, last_proof):
@@ -101,9 +101,9 @@ def mine(wallet_adress):
         mining_rewards = wallet_bals
         mining_rewardnum = mining_rewards['MiningWallet']
         mining_reward = random.randint(0,mining_rewardnum)
-        if mining_reward > 100:
-            mining_reward = random.randint(0,100)
-        if mining_rewardnum <= 100:
+        if mining_reward > 5:
+            mining_reward = random.randint(0,5)
+        if mining_rewardnum <= 5:
             return "There is not currently enough coins in the mining wallet to give out a reward to a miner (you), make a large transaction or wait for someone else to do the same for more to be added..."
         adder = wallet_bals
         adder[wallet_adress] = int(adder[wallet_adress]) + int(mining_reward)
@@ -134,6 +134,13 @@ def mine(wallet_adress):
     }
     return jsonify(response, 200)
 
+
+def percent(expression):
+    if "%" in expression:
+        expression = expression.replace("%","/100")
+    return eval(expression)
+
+
 @app.route('/transaction/new/<frm>/<key>/<to>/<amount>', methods=['GET'])
 def new_transaction(frm, key, to, amount):
 
@@ -149,36 +156,12 @@ def new_transaction(frm, key, to, amount):
     walletkey = keys[frm]
     with open('wallets.json', 'r') as f:
         wallet_bals = json.load(f)
-    
-    tax = 5
-    if int(amount) >= int(100):
-        tax = 10
-    if int(amount) >= int(1000):
-        tax = 100
-    if int(amount) >= int(10000):
-        tax = 1000
-    if int(amount) >= int(100000):
-        tax = 10000
-    if int(amount) >= int(1000000):
-        tax = 100000
-    if int(amount) >= int(1000000):
-        tax = 100000
-    if int(amount) >= int(10000000):
-        tax = 1000000
-    if int(amount) >= int(20000000):
-        tax = 2000000
-    if int(amount) >= int(30000000):
-        tax = 3000000
-    if int(amount) >= int(40000000):
-        tax = 4000000
-    if int(amount) >= int(50000000):
-        tax = 5000000
-    if int(amount) >= int(60000000):
-        tax = 6000000
-    if int(amount) >= int(70000000):
-        tax = 7000000
-    if int(amount) >= int(80000000):
-        return "Transactions of this size are not allowed, max size is 70000000 ECN with a network fee of 7000000 ECN."
+
+    tax = percent(f"{amount}*10%")
+    if amount == 80000000:
+        return "Transactions of this size are not allowed, max size is 70000000 ECN with a network fee of 20% due to the larger size."
+    if amount >= 70000000:
+        tax = percent(f"{amount}*20%")
     required_amount = int(amount) + tax
     if int(wallet_bals[frm]) < int(required_amount):
         return 'balance is insufficient!, this may be because of the network fee, the required balance for this transaction is: ' + str(required_amount)
@@ -199,7 +182,7 @@ def new_transaction(frm, key, to, amount):
         )
 
     response = {
-        'message': f'Transaction will be added to the Block {index}',
+        'message': f'Transaction Completed {amount} Sent To: {to} Amount Paid In Total (with network fee): {required_amount} Transaction will be added to the Block {index}.',
     }
     return jsonify(response, 200)
 
@@ -238,8 +221,8 @@ def newWallet():
         # function to add to JSON
         with open('wallets.json','r+') as f:
             wallets = json.load(f)
-        
-        wallets[wallet] = 0    
+
+        wallets[wallet] = 0
         with open('wallets.json','r+') as f:
             json.dump(wallets, f, indent=4)
         with open('keys.json', 'r+') as f:
@@ -268,7 +251,7 @@ def index_url():
     <body style="background-color:grey;">
     urls are:
     <br>
-    /mine/walletadress // request must be a get request just mines a block can be spam requested for quicker mining. 
+    /mine/walletadress // request must be a get request just mines a block can be spam requested for quicker mining.
     <br>
     /getwalletbal/walletadress // returns the global wallet value
     <br>
@@ -285,4 +268,5 @@ def index_url():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
+
 
