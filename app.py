@@ -85,8 +85,8 @@ node_identifier = str(uuid4()).replace('-', '')
 # initiate the Blockchain
 blockchain = BlockChain()
 
-@app.route('/mine/<wallet_adress>', methods=['GET'])
-def mine(wallet_adress):
+@app.route('/mine/<wallet_address>', methods=['GET'])
+def mine(wallet_address):
 
     # first we need to run the proof of work algorithm to calculate the new proof..
     last_block = blockchain.last_block
@@ -95,7 +95,7 @@ def mine(wallet_adress):
 
     json_file = open("wallets.json")
     variables = json.load(json_file)
-    if wallet_adress in variables:
+    if wallet_address in variables:
         with open('wallets.json', 'r') as f:
             wallet_bals = json.load(f)
         mining_rewards = wallet_bals
@@ -106,7 +106,7 @@ def mine(wallet_adress):
         if mining_rewardnum <= 5:
             return "There is not currently enough coins in the mining wallet to give out a reward to a miner (you), make a large transaction or wait for someone else to do the same for more to be added..."
         adder = wallet_bals
-        adder[wallet_adress] = int(adder[wallet_adress]) + int(mining_reward)
+        adder[wallet_address] = int(adder[wallet_address]) + int(mining_reward)
         adder['MiningWallet'] = int(adder['MiningWallet']) - int(mining_reward)
         with open('wallets.json', 'r+') as f:
             json.dump(adder, f, indent=4)
@@ -117,7 +117,7 @@ def mine(wallet_adress):
     # we must recieve reward for finding the proof in form of receiving 1 Coin
     blockchain.new_transaction(
         sender="Mining Rewards",
-        recipient=wallet_adress,
+        recipient=wallet_address,
         amount=mining_reward,
     )
 
@@ -127,6 +127,9 @@ def mine(wallet_adress):
 
     response = {
         'message': "Forged new block.",
+        'mining_sender': "MiningWallet",
+        'mining_recip': wallet_address,
+        'mining_amount': mining_reward,
         'index': block['index'],
         'transactions': block['transactions'],
         'proof': block['proof'],
@@ -147,9 +150,22 @@ def new_transaction(frm, key, to, amount):
 
     if frm == 'MiningWallet':
         return 'You cannot make or attempt to make a Transaction from the mining wallet, i know you thought you were smart!'
-    else:
+    json_file = open("wallets.json")
+    wallets1 = json.load(json_file)
+    if frm in wallets1:
         pass
-
+    else:
+        response = {
+            "message": "wallet you are attempting from send from does not exist, make sure you have it correct!"
+            }
+        return jsonify(response), 200
+    if to in wallets1:
+        pass
+    else:
+        response = {
+            "message": "wallet you are attempting to send from does not exist, make sure you have it correct!"
+            }
+        return jsonify(response), 200
     # create a new transaction
     key_file = open("keys.json")
     keys = json.load(key_file)
@@ -158,9 +174,11 @@ def new_transaction(frm, key, to, amount):
         wallet_bals = json.load(f)
 
     tax = percent(f"{amount}*10%")
-    if amount >= 80000000:
+    if int(amount) < 10:
+        return "Any transaction under 10 ECN is to small as the network fee wouldnt be an int!"
+    if int(amount) >= 80000000:
         return "Transactions of this size are not allowed, max size is 70000000 ECN with a network fee of 20% due to the larger size."
-    if amount >= 70000000:
+    if int(amount) >= 70000000:
         tax = percent(f"{amount}*20%")
     required_amount = int(amount) + tax
     if int(wallet_bals[frm]) < int(required_amount):
@@ -216,7 +234,7 @@ def register_nodes():
 @app.route('/wallet/new', methods=['GET'])
 def newWallet():
         letters = string.ascii_letters
-        wallet = ('ECN' + ''.join(random.choice(letters) for i in range(32)))
+        wallet = ('ECN' + ''.join(random.choice(letters + string.digits) for i in range(32)))
         private_key = (''.join([random.choice(string.ascii_letters + string.digits) for n in range(50)]))
         # function to add to JSON
         with open('wallets.json','r+') as f:
@@ -231,7 +249,12 @@ def newWallet():
         with open('keys.json', 'r+') as f:
             json.dump(keys, f, indent=4)
 
-        return "a new wallet has been generated its adress is: || " + wallet + " || and the private key is: || " + private_key + " || DO NOT LOSE THIS KEY AS IF YOU LOSE IT YOU CAN NOT GET YOUR WALLET BACK!"
+        response = {
+            "address": wallet,
+            "key": private_key
+        }
+
+        return jsonify(response), 200
 
 
 @app.route('/getwalletbal/<walletadress>', methods=['GET'])
@@ -239,7 +262,18 @@ def getwallet(walletadress):
     json_file = open("wallets.json")
     variables = json.load(json_file)
     if walletadress in variables:
-        return "wallets balance is: " + str(variables[walletadress])
+        return str(variables[walletadress])
+    else:
+        return "wallet does not exist!"
+    json_file.close()
+
+
+@app.route('/iswalletreal/<walletadress>', methods=['GET'])
+def checkwalletvalid(walletadress):
+    json_file = open("wallets.json")
+    variables = json.load(json_file)
+    if walletadress in variables:
+        return "wallet exists!"
     else:
         return "wallet does not exist!"
     json_file.close()
@@ -262,11 +296,12 @@ def index_url():
     /nodes/register // post request with the value(s) nodes definied.
     <br>
     /wallet/new // creates a new wallet with 0 ECN get request, returns wallet adress and wallet private key save both in something like a .txt file
+    <br>
+    /iswalletreal/walletaddress // checks if a wallet exists
     </body>
     """
 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
-
 
