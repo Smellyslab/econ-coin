@@ -15,6 +15,6 @@ this coin was made to be instant. So transactions are all instant with a 10% net
 the reason this exists is to fund mining. 
 so the second you make a transaction, it goes through and you get your money taken and they get theirs and you dont need to mine blocks to complete transactions.
 ```py
-text = "Thanks for using ECN's source code!
+text = "Thanks for using ECN's source code!"
 print(f"hey there was a message! it reads: {text}")
 ```
