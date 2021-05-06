@@ -14,3 +14,7 @@ and you have a fully functional http based cryptocurrency up and running on flas
 this coin was made to be instant. So transactions are all instant with a 10% network fee. so if you wanted to send someone 10 ECN it would cost you 11 ecn in total with the 10% fee. 
 the reason this exists is to fund mining. 
 so the second you make a transaction, it goes through and you get your money taken and they get theirs and you dont need to mine blocks to complete transactions.
+```py
+text = "Thanks for using ECN's source code!
+print(f"hey there was a message! it reads: {text}")
+```
